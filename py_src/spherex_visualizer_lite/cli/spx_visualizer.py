@@ -148,12 +148,6 @@ elif survey==9999:
 else:
     print('no survey specified')
 
-##################################################################################################################
-##################################################################################################################
-### # DELETE THIS
-### # do a test where we only analyze survey 1, but do the halfsize channels anyway
-### thisdf = df[(df['PositionAngle']==0) & (df['Day']<380.5)]
-
 # get out the lons, lats and PA angles
 lons = np.array(df['TargetLon'])
 lats = np.array(df['TargetLat'])
