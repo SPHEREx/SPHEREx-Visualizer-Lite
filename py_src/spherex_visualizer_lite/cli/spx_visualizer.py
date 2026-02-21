@@ -116,29 +116,29 @@ df = pd.read_csv(args.filename)
 if survey==1:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
-    thisdf = df[(df['PositionAngle']==0) & (df['Day']<380.5)]
+    df = df[(df['PositionAngle']==0) & (df['Day']<380.5)]
 elif survey==2:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
-    thisdf = df[(df['PositionAngle']==180) & (df['Day']<380.5)]
+    df = df[(df['PositionAngle']==180) & (df['Day']<380.5)]
 elif survey==3:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
-    thisdf = df[(df['PositionAngle']==0) & (df['Day']>380.5)]
+    df = df[(df['PositionAngle']==0) & (df['Day']>380.5)]
 elif survey==4:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
-    thisdf = df[(df['PositionAngle']==180) & (df['Day']>380.5)]
+    df = df[(df['PositionAngle']==180) & (df['Day']>380.5)]
 elif survey==13:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
     # nyquist half-step survey
-    thisdf = df[(df['PositionAngle']==0)]
+    df = df[(df['PositionAngle']==0)]
 elif survey==24:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
     # nyquist half-step survey
-    thisdf = df[(df['PositionAngle']==180)]
+    df = df[(df['PositionAngle']==180)]
 elif survey==8888:
     # deep north
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='deep_north')]
