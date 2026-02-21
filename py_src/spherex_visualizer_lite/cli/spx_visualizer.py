@@ -72,8 +72,8 @@ def get_rotation_matrix(lon_deg, lat_deg, PA_deg):
     cpa, spa   = np.cos(PA),  np.sin(PA)
 
     M = np.array([[clat*clon, -cpa*slon - spa*clon*slat,  spa*slon - cpa*clon*slat],
-                  [clat*slon,  cpa*clon - spa*slat*slon, -spa*clon - cpa*slat*slon],
-                  [slat,       spa*clat,                  cpa*clat]])
+                [clat*slon,  cpa*clon - spa*slat*slon, -spa*clon - cpa*slat*slon],
+                [slat,       spa*clat,                  cpa*clat]])
     return M
 
 # note, this function is AI-written
@@ -185,145 +185,146 @@ def calc_hitmap(chnum):
 
     return
 
-# parallelize processing spectral channels
-import multiprocessing
-with multiprocessing.Pool(processes=4) as p:
-    p.map(calc_hitmap,np.arange(len(OFFSET_X)))
+def main():
+    # parallelize processing spectral channels
+    import multiprocessing
+    with multiprocessing.Pool(processes=4) as p:
+        p.map(calc_hitmap,np.arange(len(OFFSET_X)))
 
-if survey not in [8888,9999]:
-    # all sky
-    # make plots
-    from matplotlib import cm
-        
-    # load up the maps to calculate the number of observations per pixel
-    num_spec_obs = np.zeros(NPIX).astype('uint16')
-    for chnum in range(len(OFFSET_X)):
-        h = np.load('maps'+str(survey)+'/hitmap_ch'+str(chnum).zfill(3)+'.npz')
-        num_spec_obs[h['hit_map']>=1] += 1
+    if survey not in [8888,9999]:
+        # all sky
+        # make plots
+        from matplotlib import cm
+            
+        # load up the maps to calculate the number of observations per pixel
+        num_spec_obs = np.zeros(NPIX).astype('uint16')
+        for chnum in range(len(OFFSET_X)):
+            h = np.load('maps'+str(survey)+'/hitmap_ch'+str(chnum).zfill(3)+'.npz')
+            num_spec_obs[h['hit_map']>=1] += 1
 
-    vox_comp = np.sum(num_spec_obs)/(len(OFFSET_X)*len(num_spec_obs))
+        vox_comp = np.sum(num_spec_obs)/(len(OFFSET_X)*len(num_spec_obs))
 
-    from healpy.newvisufunc import projview
+        from healpy.newvisufunc import projview
 
-    projview(num_spec_obs*2,min=0,max=len(OFFSET_X)*2,cbar=True,cmap=cm.YlGnBu,
-            title='Voxel Completeness in All-Sky Survey #'+str(survey)+': '+str(100*vox_comp)[0:7]+'%',
-            graticule=True, graticule_labels=True,xtick_label_color='white',
-            latitude_grid_spacing=45,longitude_grid_spacing=45,
-            cb_orientation='vertical',unit='# of Spectral Channels')
+        projview(num_spec_obs*2,min=0,max=len(OFFSET_X)*2,cbar=True,cmap=cm.YlGnBu,
+                title='Voxel Completeness in All-Sky Survey #'+str(survey)+': '+str(100*vox_comp)[0:7]+'%',
+                graticule=True, graticule_labels=True,xtick_label_color='white',
+                latitude_grid_spacing=45,longitude_grid_spacing=45,
+                cb_orientation='vertical',unit='# of Spectral Channels')
 
-    pl.gcf().set_size_inches(10.5, 4.5)
+        pl.gcf().set_size_inches(10.5, 4.5)
 
-    pl.text(7.20,-1.45,"Ecliptic Coordinates\nMollweide Projection",style='italic')
+        pl.text(7.20,-1.45,"Ecliptic Coordinates\nMollweide Projection",style='italic')
 
-    pl.tight_layout()
+        pl.tight_layout()
 
-    pl.savefig('spectral_coverage_survey'+str(survey)+'.png',dpi=800)
+        pl.savefig('spectral_coverage_survey'+str(survey)+'.png',dpi=800)
 
-if survey==8888 or survey==9999:
-    # deep survey
-    num_complete_obs = np.zeros(NPIX).astype('uint16') + np.iinfo(np.uint16).max
-    # for each channel
-    for chnum in range(len(OFFSET_X)):
-        # load this hitmap
-        hitmap = np.array(np.load('maps'+str(survey)+'/hitmap_ch'+str(chnum).zfill(3)+'.npz')['hit_map'])
-        # each pixel can only have as many complete spectra as the channel with the lowest number of hits
-        # for each part of the hitmap for which this channel has fewer than the previous "candidate" number of hits
-        # set those pixels equal to these pixels
-        i_where_less = np.where(hitmap < num_complete_obs)
-        num_complete_obs[i_where_less] = hitmap[i_where_less]
+    if survey==8888 or survey==9999:
+        # deep survey
+        num_complete_obs = np.zeros(NPIX).astype('uint16') + np.iinfo(np.uint16).max
+        # for each channel
+        for chnum in range(len(OFFSET_X)):
+            # load this hitmap
+            hitmap = np.array(np.load('maps'+str(survey)+'/hitmap_ch'+str(chnum).zfill(3)+'.npz')['hit_map'])
+            # each pixel can only have as many complete spectra as the channel with the lowest number of hits
+            # for each part of the hitmap for which this channel has fewer than the previous "candidate" number of hits
+            # set those pixels equal to these pixels
+            i_where_less = np.where(hitmap < num_complete_obs)[0]
+            num_complete_obs[i_where_less] = hitmap[i_where_less]
 
-# from https://github.com/zonca/paperplots/blob/master/python/scripts/PlanckFig_map.py
-from matplotlib.projections.geo import GeoAxes
+    # from https://github.com/zonca/paperplots/blob/master/python/scripts/PlanckFig_map.py
+    from matplotlib.projections.geo import GeoAxes
 
-class ThetaFormatterShiftPi(GeoAxes.ThetaFormatter):
-    """Shifts labelling by pi
-    Shifts labelling from -180,180 to 0-360"""
-    def __call__(self, x, pos=None):
-        if x != 0:
-            x *= -1
-        if x < 0:
-            x += 2*np.pi
-        return GeoAxes.ThetaFormatter.__call__(self, x, pos)
+    class ThetaFormatterShiftPi(GeoAxes.ThetaFormatter):
+        """Shifts labelling by pi
+        Shifts labelling from -180,180 to 0-360"""
+        def __call__(self, x, pos=None):
+            if x != 0:
+                x *= -1
+            if x < 0:
+                x += 2*np.pi
+            return GeoAxes.ThetaFormatter.__call__(self, x, pos)
 
-def lon_to_plot(lon,lat):
-    if len(lon)==0:
-        # special case for matplotlib projection
-        return [100],[100]
-    else:
-        return -(np.mod(lon+180,360)-180)*np.pi/180, lat*np.pi/180
+    def lon_to_plot(lon,lat):
+        if len(lon)==0:
+            # special case for matplotlib projection
+            return [100],[100]
+        else:
+            return -(np.mod(lon+180,360)-180)*np.pi/180, lat*np.pi/180
 
-# get utility function from healpy for coordinate conversion
-from healpy import Rotator
-r = Rotator(coord=['G','E'])
-def gal_to_eclip(gal_lon,gal_lat):
-    return r(gal_lon,gal_lat,lonlat=True)
+    # get utility function from healpy for coordinate conversion
+    from healpy import Rotator
+    r = Rotator(coord=['G','E'])
+    def gal_to_eclip(gal_lon,gal_lat):
+        return r(gal_lon,gal_lat,lonlat=True)
 
-if survey==8888:  
-    #A = none
-    #B = Greys
-    #C = hot
-    #D = YlGnBu
+    if survey==8888:  
+        #A = none
+        #B = Greys
+        #C = hot
+        #D = YlGnBu
 
-    f = pl.figure(figsize=(6.0,4.5))
-    hl.visufunc.gnomview(map=num_complete_obs,rot=(0,90,0),xsize=550,fig=f,cbar=False,title=r'Northern Deep Field',badcolor='white',bgcolor='white',notext=True,cmap=cm.YlGnBu)
-    hl.graticule(local=False,dmer=22.5)
-    lons = np.arange(-180,181,1)
-    hl.projplot(lons,85+np.zeros_like(lons),':k',lonlat=True)
-    pl.legend(loc=2)
-    #hl.visufunc.projtext(-151,84.9,'85 deg\neclip. lat',lonlat=True)
-    #hl.visufunc.projtext(-1,84.2,'0 deg\neclip. lon',lonlat=True,color='grey')
-    #hl.visufunc.projtext(20.2,83.9,'22.5 deg\neclip. lon',lonlat=True,color='grey')
+        f = pl.figure(figsize=(6.0,4.5))
+        hl.visufunc.gnomview(map=num_complete_obs,rot=(0,90,0),xsize=550,fig=f,cbar=False,title=r'Northern Deep Field',badcolor='white',bgcolor='white',notext=True,cmap=cm.YlGnBu)
+        hl.graticule(local=False,dmer=22.5)
+        lons = np.arange(-180,181,1)
+        hl.projplot(lons,85+np.zeros_like(lons),':k',lonlat=True)
+        pl.legend(loc=2)
+        #hl.visufunc.projtext(-151,84.9,'85 deg\neclip. lat',lonlat=True)
+        #hl.visufunc.projtext(-1,84.2,'0 deg\neclip. lon',lonlat=True,color='grey')
+        #hl.visufunc.projtext(20.2,83.9,'22.5 deg\neclip. lon',lonlat=True,color='grey')
 
-    ax = pl.gca()
-    im = ax.get_images()[0]
-    cmap = f.colorbar(im,ax=ax)
+        ax = pl.gca()
+        im = ax.get_images()[0]
+        cmap = f.colorbar(im,ax=ax)
 
-    pl.savefig('spectral_coverage_deep_north.png',dpi=900)
+        pl.savefig('spectral_coverage_deep_north.png',dpi=900)
 
-if survey==9999:
-    f = pl.figure(figsize=(6.0,4.5))
-    hl.visufunc.gnomview(map=num_complete_obs,rot=(44.8,-82,0),xsize=550,fig=f,cbar=False,title=r'Southern Deep Field',badcolor='white',bgcolor='white',notext=True,cmap=cm.YlGnBu)
-    hl.graticule(local=False,dmer=22.5)
-    pl.legend(loc=2)
-    #hl.visufunc.projtext(102,-84.2,'90 deg\neclip. lon',lonlat=True,color='grey')
-    #hl.visufunc.projtext(90,-87.5,'67.5 deg\neclip. lon',lonlat=True,color='grey')
+    if survey==9999:
+        f = pl.figure(figsize=(6.0,4.5))
+        hl.visufunc.gnomview(map=num_complete_obs,rot=(44.8,-82,0),xsize=550,fig=f,cbar=False,title=r'Southern Deep Field',badcolor='white',bgcolor='white',notext=True,cmap=cm.YlGnBu)
+        hl.graticule(local=False,dmer=22.5)
+        pl.legend(loc=2)
+        #hl.visufunc.projtext(102,-84.2,'90 deg\neclip. lon',lonlat=True,color='grey')
+        #hl.visufunc.projtext(90,-87.5,'67.5 deg\neclip. lon',lonlat=True,color='grey')
 
-    def generate_great_circle_points(center_lon, center_lat, radius_deg, step_deg=1):
-        # convert to radians
-        lat0 = np.radians(center_lat)
-        lon0 = np.radians(center_lon)
-        radius_rad = np.radians(radius_deg)
+        def generate_great_circle_points(center_lon, center_lat, radius_deg, step_deg=1):
+            # convert to radians
+            lat0 = np.radians(center_lat)
+            lon0 = np.radians(center_lon)
+            radius_rad = np.radians(radius_deg)
 
-        # bearings from 0 to 360 degrees
-        bearings_deg = np.arange(0, 361, step_deg)
-        bearings_rad = np.radians(bearings_deg)
+            # bearings from 0 to 360 degrees
+            bearings_deg = np.arange(0, 361, step_deg)
+            bearings_rad = np.radians(bearings_deg)
 
-        # compute points using spherical formulas
-        # NOTE these formulas are from ChatGPT
-        # TODO verify these formulas by hand or replace with human-derived formula
-        lat_points = np.arcsin(np.sin(lat0)*np.cos(radius_rad) + np.cos(lat0)*np.sin(radius_rad)*np.cos(bearings_rad))
-        lon_points = lon0 + np.arctan2(np.sin(bearings_rad)*np.sin(radius_rad)*np.cos(lat0), np.cos(radius_rad) - np.sin(lat0)*np.sin(lat_points))
+            # compute points using spherical formulas
+            # NOTE these formulas are from ChatGPT
+            # TODO verify these formulas by hand or replace with human-derived formula
+            lat_points = np.arcsin(np.sin(lat0)*np.cos(radius_rad) + np.cos(lat0)*np.sin(radius_rad)*np.cos(bearings_rad))
+            lon_points = lon0 + np.arctan2(np.sin(bearings_rad)*np.sin(radius_rad)*np.cos(lat0), np.cos(radius_rad) - np.sin(lat0)*np.sin(lat_points))
 
-        # convert back to degrees
-        lat_points_deg = np.degrees(lat_points)
-        lon_points_deg = np.degrees(lon_points)
+            # convert back to degrees
+            lat_points_deg = np.degrees(lat_points)
+            lon_points_deg = np.degrees(lon_points)
 
-        # normalize longitude to [-180, 180]
-        lon_points_deg = np.mod(lon_points_deg + 180,360) - 180
+            # normalize longitude to [-180, 180]
+            lon_points_deg = np.mod(lon_points_deg + 180,360) - 180
 
-        return lon_points_deg,lat_points_deg
+            return lon_points_deg,lat_points_deg
 
-    lons_to_plot,lats_to_plot = generate_great_circle_points(44.8, -82.0, 5, step_deg=1)
-    #hl.projplot(lons_to_plot,lats_to_plot,':k',lonlat=True)
-    hl.projplot(np.arange(-180,180),np.zeros_like(np.arange(-180,180))+-85,':k',lonlat=True)
-    hl.projplot(np.arange(-180,180),np.zeros_like(np.arange(-180,180))+-80,':k',lonlat=True)
-    #hl.visufunc.projtext(39,-77.3,'5 deg radius around\neclip. lon=44.8\n          lat=-82.0',lonlat=True)
+        lons_to_plot,lats_to_plot = generate_great_circle_points(44.8, -82.0, 5, step_deg=1)
+        #hl.projplot(lons_to_plot,lats_to_plot,':k',lonlat=True)
+        hl.projplot(np.arange(-180,180),np.zeros_like(np.arange(-180,180))+-85,':k',lonlat=True)
+        hl.projplot(np.arange(-180,180),np.zeros_like(np.arange(-180,180))+-80,':k',lonlat=True)
+        #hl.visufunc.projtext(39,-77.3,'5 deg radius around\neclip. lon=44.8\n          lat=-82.0',lonlat=True)
 
-    ax = pl.gca()
-    im = ax.get_images()[0]
-    cmap = f.colorbar(im,ax=ax)
+        ax = pl.gca()
+        im = ax.get_images()[0]
+        cmap = f.colorbar(im,ax=ax)
 
-    pl.savefig('spectral_coverage_deep_south.png',dpi=900)
+        pl.savefig('spectral_coverage_deep_south.png',dpi=900)
 
 if __name__ == "__main__":
-    pass
+    main()
