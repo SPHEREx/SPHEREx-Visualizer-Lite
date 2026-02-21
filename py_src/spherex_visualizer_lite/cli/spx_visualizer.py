@@ -12,11 +12,15 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 req = parser.add_argument_group('required arguments')
 req.add_argument('-f','--filename',required=True,\
     help='Filename to read the survey plan file')
-req.add_argument('-s','--survey-number',required=True,\
+req.add_argument('-s','--survey-number',required=True,type=int,\
     help='Number of the survey: [1,2,3,4] for main surveys, or [8888,9999] for deep north and deep south respectively, or [13,24] for Nyquist-sampled composites of two al-sky surveys (i.e. 13 = surveys 1 and 3, 24 = surveys 2 and 4)')
+req.add_argument('-N','--number-of-cores',required=False,default=4,type=int,\
+    help='Number of CPU cores used for processing. Default is 4')
 args = parser.parse_args()
 
-survey = int(args.survey_number)
+survey = args.survey_number
+
+Ncores = args.number_of_cores
 
 import os
 os.system('mkdir maps'+str(survey))
@@ -188,7 +192,7 @@ def calc_hitmap(chnum):
 def main():
     # parallelize processing spectral channels
     import multiprocessing
-    with multiprocessing.Pool(processes=4) as p:
+    with multiprocessing.Pool(processes=Ncores) as p:
         p.map(calc_hitmap,np.arange(len(OFFSET_X)))
 
     if survey not in [8888,9999]:
