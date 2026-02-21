@@ -324,3 +324,6 @@ if survey==9999:
     cmap = f.colorbar(im,ax=ax)
 
     pl.savefig('spectral_coverage_deep_south.png',dpi=900)
+
+if __name__ == "__main__":
+    pass
