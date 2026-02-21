@@ -161,7 +161,7 @@ def calc_hitmap(chnum):
     v_inst_ref = np.array(hl.ang2vec(px, py, lonlat=True)).T
 
     # accumulate hits for a full map simulation
-    hit_map = np.zeros(NPIX).astype('uint8')
+    hit_map = np.zeros(NPIX).astype('uint16')
 
     for i in range(len(lons)):
         if not np.mod(i,1000):
@@ -183,6 +183,8 @@ def calc_hitmap(chnum):
 
     return
 
+from matplotlib import cm
+
 def main():
     # parallelize processing spectral channels
     import multiprocessing
@@ -192,7 +194,6 @@ def main():
     if survey not in [8888,9999]:
         # all sky
         # make plots
-        from matplotlib import cm
             
         # load up the maps to calculate the number of observations per pixel
         num_spec_obs = np.zeros(NPIX).astype('uint16')
