@@ -116,19 +116,19 @@ df = pd.read_csv(args.filename)
 if survey==1:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
-    df = df[(df['PositionAngle']==0) & (df['Day']<380.5)]
+    df = df[(df['PositionAngle']==0) & (df['Day']<378.0)]
 elif survey==2:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
-    df = df[(df['PositionAngle']==180) & (df['Day']<380.5)]
+    df = df[(df['PositionAngle']==180) & (df['Day']<378.0)]
 elif survey==3:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
-    df = df[(df['PositionAngle']==0) & (df['Day']>380.5)]
+    df = df[(df['PositionAngle']==0) & (df['Day']>378.0)]
 elif survey==4:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
-    df = df[(df['PositionAngle']==180) & (df['Day']>380.5)]
+    df = df[(df['PositionAngle']==180) & (df['Day']>378.0)]
 elif survey==13:
     # just do all sky
     df = df[(df['EngFlag']=='arrive_to_sci') & (df['SciFlag']=='all_sky')]
